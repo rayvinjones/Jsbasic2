@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Information</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        .controls button, .controls select {
+            margin-right: 10px;
+        }
+
+        .action-buttons button {
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Javascript  Web Output#2</h1>
+    <form id="userForm">
+        <label for="firstName">First Name: </label>
+        <input type="text" id="firstName" required><br><br>
+        
+        <label for="middleName">Middle Name: </label>
+        <input type="text" id="middleName"><br><br>
+        
+        <label for="lastName">Last Name: </label>
+        <input type="text" id="lastName" required><br><br>
+        
+        <label for="age">Age: </label>
+        <input type="number" id="age" required><br><br>
+        
+        <button type="button" onclick="addRecord()">Insert</button>
+        <button type="button" onclick="clearForm()">Clear</button>
+    </form>
+
+    <h2>Records</h2>
+    <table id="recordsTable">
+        <thead>
+            <tr>
+                <th>First Name</th>
+                <th>Middle Name</th>
+                <th>Last Name</th>
+                <th>Age</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Records will be inserted here -->
+        </tbody>
+    </table>
+
+    <div class="controls">
+        <select id="sortBy">
+            <option value="firstName">Sort by First Name</option>
+            <option value="middleName">Sort by Middle Name</option>
+            <option value="lastName">Sort by Last Name</option>
+            <option value="age">Sort by Age</option>
+        </select>
+        <button onclick="clearRecords()">Clear Records</button>
+        <button onclick="saveToLocalStorage()">Save to Local Storage</button>
+        
+        <!-- A-Z and Z-A sorting buttons -->
+        <button type="button" onclick="sortRecords('asc')">A-Z</button>
+  
+    </div>
+
+    <script>
+        // Load records from local storage when the page loads
+        window.onload = function() {
+            const storedRecords = JSON.parse(localStorage.getItem('records'));
+            if (storedRecords) {
+                storedRecords.forEach(record => {
+                    addRowToTable(record);
+                });
+            }
+        };
+
+        // Add a record to the table and save it to local storage
+        function addRecord() {
+            const firstName = document.getElementById("firstName").value;
+            const middleName = document.getElementById("middleName").value;
+            const lastName = document.getElementById("lastName").value;
+            const age = document.getElementById("age").value;
+            
+            if(firstName && lastName && age) {
+                const record = { firstName, middleName, lastName, age };
+                
+                // Add the record to the table
+                addRowToTable(record);
+                
+                // Save the record to local storage
+                saveToLocalStorage();
+
+                // Clear the form fields after adding the record
+                clearForm();
+            } else {
+                alert("Please fill out all required fields.");
+            }
+        }
+
+        // Function to add a row to the table
+        function addRowToTable(record) {
+            const table = document.getElementById("recordsTable").getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow(table.rows.length);
+            newRow.insertCell(0).textContent = record.firstName;
+            newRow.insertCell(1).textContent = record.middleName;
+            newRow.insertCell(2).textContent = record.lastName;
+            newRow.insertCell(3).textContent = record.age;
+
+            // Create action buttons (Edit and Delete)
+            const actionsCell = newRow.insertCell(4);
+            actionsCell.classList.add('action-buttons');
+            const editButton = document.createElement('button');
+            editButton.textContent = 'Edit';
+            editButton.onclick = function() { editRecord(newRow, record); };
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.onclick = function() { deleteRecord(newRow, record); };
+            
+            actionsCell.appendChild(editButton);
+            actionsCell.appendChild(deleteButton);
+        }
+
+        // Function to save the records to local storage
+        function saveToLocalStorage() {
+            const table = document.getElementById("recordsTable").getElementsByTagName('tbody')[0];
+            const rows = Array.from(table.rows);
+            let records = [];
+
+            // Loop through the rows and extract the data
+            rows.forEach(row => {
+                const firstName = row.cells[0].textContent;
+                const middleName = row.cells[1].textContent;
+                const lastName = row.cells[2].textContent;
+                const age = row.cells[3].textContent;
+
+                records.push({ firstName, middleName, lastName, age });
+            });
+
+            // Save the records to local storage
+            localStorage.setItem('records', JSON.stringify(records));
+        }
+
+        // Function to clear the form
+        function clearForm() {
+            document.getElementById("firstName").value = "";
+            document.getElementById("middleName").value = "";
+            document.getElementById("lastName").value = "";
+            document.getElementById("age").value = "";
+        }
+
+        // Function to clear all records
+        function clearRecords() {
+            const tableBody = document.getElementById("recordsTable").getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = "";  // Clear the table
+
+            // Clear records from local storage
+            localStorage.removeItem('records');
+        }
+
+        // Function to sort records by a specific column (A-Z or Z-A)
+        function sortRecords(order) {
+            const table = document.getElementById("recordsTable").getElementsByTagName('tbody')[0];
+            const rows = Array.from(table.rows);
+            const sortBy = document.getElementById("sortBy").value;
+
+            // Sort the rows based on the selected key and order (A-Z or Z-A)
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.cells[["firstName", "middleName", "lastName", "age"].indexOf(sortBy)].textContent;
+                const cellB = rowB.cells[["firstName", "middleName", "lastName", "age"].indexOf(sortBy)].textContent;
+
+                if (sortBy === 'age') {
+                    return order === 'asc' ? parseInt(cellA) - parseInt(cellB) : parseInt(cellB) - parseInt(cellA);
+                } else {
+                    return order === 'asc' ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+                }
+            });
+
+            // Append the sorted rows back to the table
+            rows.forEach(row => table.appendChild(row));
+        }
+
+        // Function to delete a record
+        function deleteRecord(row, record) {
+            // Remove row from table
+            row.remove();
+
+            // Remove record from local storage
+            let storedRecords = JSON.parse(localStorage.getItem('records'));
+            storedRecords = storedRecords.filter(r => r.firstName !== record.firstName || r.middleName !== record.middleName || r.lastName !== record.lastName || r.age !== record.age);
+            localStorage.setItem('records', JSON.stringify(storedRecords));
+        }
+
+        // Function to edit a record
+        function editRecord(row, record) {
+            // Pre-fill the form with the data of the selected row
+            document.getElementById("firstName").value = record.firstName;
+            document.getElementById("middleName").value = record.middleName;
+            document.getElementById("lastName").value = record.lastName;
+            document.getElementById("age").value = record.age;
+
+            // Remove the record from the table and local storage for editing
+            deleteRecord(row, record);
+        }
+    </script>
+</body>
+</html>
